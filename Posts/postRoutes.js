@@ -56,4 +56,51 @@ router.get('/:postId/comments', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  try {
+    const { title, contents } = req.body;
+    if (
+      title === '' ||
+      title.length < 3 ||
+      contents === '' ||
+      contents.length < 3
+    ) {
+      return res.status(400).json({
+        errorMessage: 'Please provide title and contents for the post.'
+      });
+    }
+    const post = await db.insert(req.body);
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(500).json({
+      error: 'There was an error while saving the post to the database'
+    });
+  }
+});
+
+router.post('/:postId/comments', async (req, res) => {
+  try {
+    const post = await db.findById(req.params.postId);
+    if (!post.length) {
+      return res
+        .status(404)
+        .json({ message: 'The post with the specified ID does not exist.' });
+    }
+    if (req.body.text.trim() === '') {
+      return res
+        .status(400)
+        .json({ errorMessage: 'Please provide text for the comment.' });
+    }
+    const comments = await db.insertComment(req.body);
+    res.status(201).json(comments);
+  } catch (error) {
+      console.log(error.message)
+    res
+      .status(500)
+      .json({
+        error: 'There was an error while saving the comment to the database'
+      });
+  }
+});
+
 module.exports = router;
